@@ -40,7 +40,6 @@ class Board extends Component {
     }
 
     render() {
-        // console.log('====', )
         return (
             <View style={{ flex: 1 }}>
                 {this.renderBoard()}
