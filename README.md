@@ -3,7 +3,7 @@
 
 Guides to run project:
 
-  #1 Clone project
+  #1 Clone project <br />
   #2 In project directory run npm install
   #3 cd ios/ && pod install
   #4 cd ..
