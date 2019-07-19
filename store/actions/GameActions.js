@@ -1,6 +1,8 @@
-import { START_GAME, GAME_FIELDS, POSSIBLE_JUMPS, SET_SELECTED_FIELDS, GO_TO_NEXT_LEVEL, GAME_LEVEL_FAILED_START_NEW, SAVE_TIME } from "./types";
+import { START_GAME, GAME_FIELDS, POSSIBLE_JUMPS, SET_SELECTED_FIELDS, GO_TO_NEXT_LEVEL, GAME_LEVEL_FAILED_START_NEW, SAVE_TIME, ADD_LIFE, REMOVE_LIVES } from "./types";
 import store from '../index';
 import { Alert } from 'react-native';
+import AsyncStorage from '@react-native-community/async-storage';
+import { resetPlayerToZero } from "./PlayerActions";
 
 let arrayOfPossibleJumps = [{ i: +3, j: 0 }, { i: +2, j: -2 }, { i: 0, j: -3 }, { i: -2, j: -2 }, { i: -3, j: 0 }, { i: -2, j: +2 }, { i: 0, j: +3 }, { i: +2, j: +2 }]
 let failedJumps = []
@@ -24,7 +26,7 @@ export const saveTimeForCompletedFiled = (time) => {
         type: SAVE_TIME,
         payload: time
     }
-}
+};
 
 const validateField = (field) => {
     let index = store.getState().gameReducer.gameFields.findIndex(element => element.i === field.i && element.j === field.j)
@@ -34,7 +36,8 @@ const validateField = (field) => {
 const activeFields = (i, j) => {
     let lastField = { i, j }
     store.dispatch({ type: GAME_FIELDS, payload: lastField });
-    for (let k = 1; k < store.getState().gameReducer.currentLevel; k++) {
+    const level = store.getState().gameReducer.players.find(player => player.player === store.getState().gameReducer.activePlayer).currentLevel
+    for (let k = 1; k < level; k++) {
         let newValue = recursiveFuntionToGenerateJumps(lastField)
         if (newValue) {
             lastField = newValue;
@@ -76,10 +79,20 @@ const gameEnded = (message, win) => {
         [
             { text: 'OK', onPress: () => { win ? store.dispatch({ type: GO_TO_NEXT_LEVEL }) : store.dispatch({ type: GAME_LEVEL_FAILED_START_NEW }) } },
             {
-                text: 'Cancel',
-                onPress: () => console.log('Cancel Pressed'),
-                style: 'cancel',
+                text: win ? 'Cancel' : 'Choose Level',
+                onPress: () => console.log('Cancel Pressed')
             }
+        ],
+        { cancelable: false },
+    );
+}
+
+const livesLost = (player) => {
+    Alert.alert(
+        'Alert',
+        'You lost all lives. Reseting all data to 0',
+        [
+            { text: 'OK', onPress: () => store.dispatch(resetPlayerToZero(player)) },
         ],
         { cancelable: false },
     );
@@ -90,19 +103,67 @@ const generateRandomJump = (array) => {
 }
 
 const calculatePossibleJumps = (field) => {
-    const gameFields = store.getState().gameReducer.gameFields;
-    const allreadySelectedFields = store.getState().gameReducer.allreadySelectedFields;
+    const gameReducerState = store.getState().gameReducer;
+    const gameFields = gameReducerState.gameFields;
+    const allreadySelectedFields = gameReducerState.allreadySelectedFields;
     const possibleJumps = arrayOfPossibleJumps.filter(possibleJump => 0 < possibleJump.i + field.i && possibleJump.i + field.i < 11 && 0 < possibleJump.j + field.j && possibleJump.j + field.j < 11)
     const changedValues = possibleJumps.map(jump => { return { i: jump.i + field.i, j: jump.j + field.j } })
     const jumpsWithinSelectedFields = gameFields.filter(element => changedValues.find(value => value.i === element.i && value.j === element.j))
     const filterAllreadySelectedFields = jumpsWithinSelectedFields.filter(element => !allreadySelectedFields.find(value => value.i === element.i && value.j === element.j))
+    const singlePlayerData = gameReducerState.players.find(player => player.player === gameReducerState.activePlayer)
     if (!filterAllreadySelectedFields.length && gameFields.length !== allreadySelectedFields.length) {
         store.dispatch({ type: START_GAME, payload: false })
-        gameEnded('There is no more moves, you lost this game, play again?')
+        store.dispatch({ type: SAVE_TIME, payload: 0 })
+        if (singlePlayerData.lives - gameFields.length - allreadySelectedFields.length > 1) {
+            gameEnded('There is no more moves, you lost this game, play again?')
+            store.dispatch({ type: REMOVE_LIVES, payload: gameFields.length - allreadySelectedFields.length });
+        } else {
+            livesLost(singlePlayerData.player)
+        }
     } else if (!filterAllreadySelectedFields.length && gameFields.length == allreadySelectedFields.length) {
         store.dispatch({ type: START_GAME, payload: false })
-        gameEnded(`Level ${store.getState().gameReducer.currentLevel} complete. Play next one?`, true)
+        saveSinglePlayerData(singlePlayerData)
+        saveValueForLevel({ level: gameReducerState.currentLevel, time: gameReducerState.time, player: gameReducerState.activePlayer })
+        gameEnded(`Level ${gameReducerState.currentLevel} complete. Play next one?`, true)
+        store.dispatch({ type: ADD_LIFE });
     } else {
         return filterAllreadySelectedFields;
     }
+}
+
+const saveValueForLevel = async (levelData) => {
+    let data = await getFromAsyncStorege('@data')
+    saveMaxLevel(levelData.level, levelData.player)
+    if (data) {
+        let newData = [...data, levelData];
+        // console.log('newData', newData)
+        await AsyncStorage.setItem('@data', JSON.stringify(newData))
+    } else {
+        let makeArray = [];
+        makeArray.push(levelData);
+        await AsyncStorage.setItem('@data', JSON.stringify(makeArray))
+    }
+    store.dispatch({ type: SAVE_TIME, payload: 0 })
+}
+
+const saveMaxLevel = async (level, player) => {
+    let savedPlayer = await getFromAsyncStorege(`@${player}`);
+    if (savedPlayer && savedPlayer < level) {
+        await AsyncStorage.setItem(`@${player}`, JSON.stringify(level))
+    } else if (!savedPlayer) {
+        await AsyncStorage.setItem(`@${player}`, JSON.stringify(level))
+    }
+}
+
+export const saveSinglePlayerData = async (newObject) => {
+    const players = await getFromAsyncStorege('@players')
+    let newPlayers = [...players];
+    const foundIndex = newPlayers.findIndex(player => player.player === newObject.player);
+    newPlayers[foundIndex] = newObject;
+    console.log('new plejers', newPlayers)
+    await AsyncStorage.setItem('@players', JSON.stringify(newPlayers))
+}
+
+export const getFromAsyncStorege = async (key) => {
+    return await AsyncStorage.getItem(key).then(res => JSON.parse(res))
 }

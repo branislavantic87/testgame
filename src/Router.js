@@ -1,6 +1,8 @@
 import React from 'react';
 import { Scene, Router, Stack } from 'react-native-router-flux';
 import MainScreen from './components/MainScreen';
+import ChoosePlayer from './components/comon/ChoosePlayer';
+import GameStats from './components/comon/GameStats';
 
 const RouterComponent = () => {
     return (
@@ -9,6 +11,8 @@ const RouterComponent = () => {
                 <Scene hideNavBar key='root'>
                     <Scene hideNavBar key={'Home'} component={MainScreen} inital />
                 </Scene>
+                <Scene hideNavBar key='choosePlayer' component={ChoosePlayer} />
+                <Scene hideNavBar key='gameStats' component={GameStats} />
             </Stack>
         </Router>
     )

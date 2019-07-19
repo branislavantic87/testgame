@@ -4,9 +4,12 @@ import { connect } from 'react-redux';
 import TimerComponent from './comon/TimerComponent';
 
 
-arrayOfStats = ['Timer', 'Left to click', 'Lives', 'Level']
+arrayOfStats = ['Timer', 'Left to click', 'Lives left', 'Level']
 
 class Stats extends Component {
+    constructor(props) {
+        super(props)
+    };
 
     renderStats = (value) => {
         switch (value) {
@@ -14,16 +17,18 @@ class Stats extends Component {
                 return <Text>{value}  <TimerComponent /></Text>
             case 'Left to click':
                 return <Text>{value}: {this.props.gameStarted ? this.props.gameFields.length - this.props.allreadySelectedFields.length : ''}</Text>
-            case 'Lives':
-                return <Text>{value}</Text>;
+            case 'Lives left':
+                return <Text>{value} {this.props.players.length && this.props.players.find(player => player.player === this.props.activePlayer).lives}</Text>;
             case 'Level':
-                return <Text>{value}: {this.props.currentLevel}</Text>
+                return <Text>{value}: {this.props.players.length && this.props.players.find(player => player.player === this.props.activePlayer).currentLevel}</Text>
             default:
+                console.log('default')
                 break;
         }
     }
 
     render() {
+        console.log('=====', this.props.activePlayer)
         return (
             <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between' }}>
                 {arrayOfStats.map((element, i) => {
@@ -38,8 +43,8 @@ class Stats extends Component {
 
 
 const mapStateToProsp = state => {
-    const { gameFields, allreadySelectedFields, gameStarted, currentLevel } = state.gameReducer;
-    return { gameFields, allreadySelectedFields, gameStarted, currentLevel };
+    const { gameFields, allreadySelectedFields, gameStarted, currentLevel, lives, activePlayer, players } = state.gameReducer;
+    return { gameFields, allreadySelectedFields, gameStarted, currentLevel, lives, activePlayer, players };
 }
 
 export default connect(mapStateToProsp)(Stats)
