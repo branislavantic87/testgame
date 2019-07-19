@@ -143,7 +143,6 @@ const saveValueForLevel = async (levelData) => {
     saveMaxLevel(levelData.level, levelData.player)
     if (data) {
         let newData = [...data, levelData];
-        // console.log('newData', newData)
         await AsyncStorage.setItem('@data', JSON.stringify(newData))
     } else {
         let makeArray = [];
@@ -164,11 +163,14 @@ const saveMaxLevel = async (level, player) => {
 
 export const saveSinglePlayerData = async (newObject) => {
     const players = await getFromAsyncStorege('@players')
-    let newPlayers = [...players];
-    const foundIndex = newPlayers.findIndex(player => player.player === newObject.player);
-    newPlayers[foundIndex] = newObject;
-    console.log('new plejers', newPlayers)
-    await AsyncStorage.setItem('@players', JSON.stringify(newPlayers))
+    if (players) {
+        let newPlayers = [...players];
+        const foundIndex = newPlayers.findIndex(player => player.player === newObject.player);
+        newPlayers[foundIndex] = newObject;
+        await AsyncStorage.setItem('@players', JSON.stringify(newPlayers))
+    } else if (!players) {
+        await AsyncStorage.setItem('@players', JSON.stringify([newObject]))
+    }
 }
 
 export const getFromAsyncStorege = async (key) => {

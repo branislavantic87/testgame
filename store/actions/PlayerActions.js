@@ -33,9 +33,13 @@ export const createNewPlayer = (name) => async dispatch => {
         const findPlayerIndex = store.getState().gameReducer.players.findIndex(player => player.player === name)
         if (findPlayerIndex == -1) {
             if (players) {
-                const newPlayers = [...players, { player: name, lives: 99, currentLevel: 1 }]
-                await AsyncStorage.setItem('@players', JSON.stringify(newPlayers))
-            } else {
+                let newPlayers = [...players]
+                const findIndex = newPlayers.findIndex(player => player.player === name)
+                if (findIndex == -1) {
+                    newPlayers = [...newPlayers, { player: name, lives: 99, currentLevel: 1 }]
+                    await AsyncStorage.setItem('@players', JSON.stringify(newPlayers))
+                }
+            } else if (!players) {
                 await AsyncStorage.setItem('@players', JSON.stringify([{ player: name, lives: 99, currentLevel: 1 }]))
             }
             dispatch({ type: SET_PLAYERS, payload: { player: name, lives: 99, currentLevel: 1 } })
