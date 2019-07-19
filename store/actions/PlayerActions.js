@@ -54,6 +54,7 @@ export const resetPlayerToZero = (activePlayer) => async dispatch => {
         let findIndex = players.findIndex(player => player.player === activePlayer)
         newPlayers[findIndex] = { player: activePlayer, lives: 99, currentLevel: 1 }
         await AsyncStorage.setItem('@players', JSON.stringify(newPlayers));
+        await AsyncStorage.removeItem(`@${activePlayer}`)
     }
     dispatch({ type: RESET_PLAYER, payload: activePlayer })
 }

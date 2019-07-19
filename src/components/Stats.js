@@ -28,7 +28,6 @@ class Stats extends Component {
     }
 
     render() {
-        console.log('=====', this.props.activePlayer)
         return (
             <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between' }}>
                 {arrayOfStats.map((element, i) => {

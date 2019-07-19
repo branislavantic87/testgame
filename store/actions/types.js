@@ -11,3 +11,5 @@ export const REMOVE_LIVES = 'remove_lives';
 export const SET_ACTIVE_PLAYER = 'set_active_player';
 export const SET_PLAYERS = 'set_players';
 export const RESET_PLAYER = 'reset_player';
+export const CLEAR_TIMER = 'clear_timer';
+export const SET_LEVEL = 'set_level';

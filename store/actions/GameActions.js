@@ -1,8 +1,9 @@
-import { START_GAME, GAME_FIELDS, POSSIBLE_JUMPS, SET_SELECTED_FIELDS, GO_TO_NEXT_LEVEL, GAME_LEVEL_FAILED_START_NEW, SAVE_TIME, ADD_LIFE, REMOVE_LIVES } from "./types";
+import { START_GAME, GAME_FIELDS, POSSIBLE_JUMPS, SET_SELECTED_FIELDS, GO_TO_NEXT_LEVEL, GAME_LEVEL_FAILED_START_NEW, SAVE_TIME, ADD_LIFE, REMOVE_LIVES, CLEAR_TIMER, SET_LEVEL } from "./types";
 import store from '../index';
 import { Alert } from 'react-native';
 import AsyncStorage from '@react-native-community/async-storage';
 import { resetPlayerToZero } from "./PlayerActions";
+import { Actions } from "react-native-router-flux";
 
 let arrayOfPossibleJumps = [{ i: +3, j: 0 }, { i: +2, j: -2 }, { i: 0, j: -3 }, { i: -2, j: -2 }, { i: -3, j: 0 }, { i: -2, j: +2 }, { i: 0, j: +3 }, { i: +2, j: +2 }]
 let failedJumps = []
@@ -28,6 +29,12 @@ export const saveTimeForCompletedFiled = (time) => {
     }
 };
 
+export const setLevelForUser = (level) => dispatch => {
+    dispatch({ type: GAME_LEVEL_FAILED_START_NEW })
+    dispatch({ type: SET_LEVEL, payload: level });
+    Actions.root({ type: 'reset' })
+}
+
 const validateField = (field) => {
     let index = store.getState().gameReducer.gameFields.findIndex(element => element.i === field.i && element.j === field.j)
     return (index == -1 && field.i > 0 && field.i < 11 && field.j > 0 && field.j < 11);
@@ -36,7 +43,7 @@ const validateField = (field) => {
 const activeFields = (i, j) => {
     let lastField = { i, j }
     store.dispatch({ type: GAME_FIELDS, payload: lastField });
-    const level = store.getState().gameReducer.players.find(player => player.player === store.getState().gameReducer.activePlayer).currentLevel
+    const level = store.getState().gameReducer.players.find(player => player.player === store.getState().gameReducer.activePlayer).currentLevel;
     for (let k = 1; k < level; k++) {
         let newValue = recursiveFuntionToGenerateJumps(lastField)
         if (newValue) {
@@ -78,9 +85,9 @@ const gameEnded = (message, win) => {
         message,
         [
             { text: 'OK', onPress: () => { win ? store.dispatch({ type: GO_TO_NEXT_LEVEL }) : store.dispatch({ type: GAME_LEVEL_FAILED_START_NEW }) } },
-            {
-                text: win ? 'Cancel' : 'Choose Level',
-                onPress: () => console.log('Cancel Pressed')
+            !win && {
+                text: 'Choose Level',
+                onPress: () => Actions.chooseLevel()
             }
         ],
         { cancelable: false },
@@ -123,8 +130,8 @@ const calculatePossibleJumps = (field) => {
     } else if (!filterAllreadySelectedFields.length && gameFields.length == allreadySelectedFields.length) {
         store.dispatch({ type: START_GAME, payload: false })
         saveSinglePlayerData(singlePlayerData)
-        saveValueForLevel({ level: gameReducerState.currentLevel, time: gameReducerState.time, player: gameReducerState.activePlayer })
-        gameEnded(`Level ${gameReducerState.currentLevel} complete. Play next one?`, true)
+        saveValueForLevel({ level: singlePlayerData.currentLevel, time: gameReducerState.time, player: singlePlayerData.player })
+        gameEnded(`Level ${singlePlayerData.currentLevel} complete. Play next one?`, true)
         store.dispatch({ type: ADD_LIFE });
     } else {
         return filterAllreadySelectedFields;
