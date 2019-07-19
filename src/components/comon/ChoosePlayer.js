@@ -31,6 +31,7 @@ class ChoosePlayer extends Component {
                             placeholder='Type in new player name'
                             onChangeText={text => this.setState({ text })}
                             value={this.state.text}
+                            returnKeyType='done'
                             style={{ flexGrow: 1, padding: 5, borderColor: 'gray', borderWidth: 0.5 }}
                         />
                     </View>
